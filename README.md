@@ -13,7 +13,7 @@ source of truth; generated files are built during deployment and are not
 committed.
 
 The parser accepts `*-rate*.log` files for OGR, OGR-NG, OGR-P2, RC5-64, and
-RC5-72. Combined `mirc*` logs are intentionally excluded. Records are assigned
+RC5-72. Records are assigned
 to years using their timestamps, not the year in a filename. Invalid records
 stop the build with an error. Duplicate timestamps are collapsed in sorted
 filename and line order, keeping the last record; the parser reports how many

@@ -78,8 +78,6 @@ def process_logs(source_dir: Path, output_dir: Path) -> dict:
     conflicting_duplicate_count = 0
 
     for source in sources:
-        if source.name.lower().startswith("mirc"):
-            continue
         match = PROJECT_RE.fullmatch(source.name)
         if match is None:
             raise ValueError(f"{source}: unsupported rate log filename")
