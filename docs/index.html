@@ -32,6 +32,10 @@
           <label>To <input id="to-date" type="date"></label>
           <button id="apply-dates" type="button">Apply</button>
         </div>
+        <label class="scale-toggle">
+          <input id="show-all-values" type="checkbox">
+          <span>Show all values (disable spike clipping)</span>
+        </label>
         <fieldset>
           <legend>Projects</legend>
           <div id="project-toggles" class="project-toggles"></div>
@@ -46,6 +50,7 @@
           <div>
             <h2 id="keys-title">RC5-72 and RC5-64</h2>
             <p>Gkeys/sec</p>
+            <p id="keys-scale-note" class="scale-note">Clipping to the 99th percentile.</p>
           </div>
           <button type="button" data-reset="keys">Reset zoom</button>
         </div>
@@ -57,6 +62,7 @@
           <div>
             <h2 id="nodes-title">OGR, OGR-NG and OGR-P2</h2>
             <p>Gnodes/sec</p>
+            <p id="nodes-scale-note" class="scale-note">Clipping to the 99th percentile.</p>
           </div>
           <button type="button" data-reset="nodes">Reset zoom</button>
         </div>
