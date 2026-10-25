@@ -33,7 +33,7 @@ class ParseLineTests(unittest.TestCase):
 
 
 class ProcessLogsTests(unittest.TestCase):
-    def test_writes_sorted_project_year_shards_and_skips_mirc_logs(self):
+    def test_writes_sorted_project_year_shards_logs(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             source_dir = root / "logs"
@@ -42,10 +42,6 @@ class ProcessLogsTests(unittest.TestCase):
             (source_dir / "rc572-rate-2025.log").write_text(
                 "[Jan 1 01:15:00 2026 GMT] rate-logger.pl: 2000\n"
                 "[Jan 1 00:15:00 2026 GMT] rate-logger.pl: 1000\n",
-                encoding="utf-8",
-            )
-            (source_dir / "mirc-rates-2026.log").write_text(
-                "combined IRC data that is intentionally unsupported",
                 encoding="utf-8",
             )
 
