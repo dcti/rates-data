@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Historical distributed.net project rates">
+    <title>Distributed.net project rates</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <main>
+      <header class="page-header">
+        <p class="eyebrow">Historical performance</p>
+        <h1>Distributed.net project rates</h1>
+        <p>Explore historical project throughput. Drag to zoom; use the wheel or pinch to zoom, and drag while holding Shift to pan.</p>
+      </header>
+
+      <section class="controls" aria-label="Chart controls">
+        <div class="range-presets" aria-label="Time range presets">
+          <button type="button" data-range="month">1M</button>
+          <button type="button" data-range="six-months">6M</button>
+          <button type="button" data-range="year">1Y</button>
+          <button type="button" data-range="five-years" class="selected">5Y</button>
+          <button type="button" data-range="all">All</button>
+        </div>
+        <div class="date-range">
+          <label>From <input id="from-date" type="date"></label>
+          <label>To <input id="to-date" type="date"></label>
+          <button id="apply-dates" type="button">Apply</button>
+        </div>
+        <fieldset>
+          <legend>Projects</legend>
+          <div id="project-toggles" class="project-toggles"></div>
+        </fieldset>
+      </section>
+
+      <p id="status" class="status" role="status" aria-live="polite">Loading rate data…</p>
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <section class="chart-section" aria-labelledby="keys-title">
+        <div class="chart-heading">
+          <div>
+            <h2 id="keys-title">RC5-72 and RC5-64</h2>
+            <p>Gkeys/sec</p>
+          </div>
+          <button type="button" data-reset="keys">Reset zoom</button>
+        </div>
+        <div class="chart-wrap"><canvas id="keys-chart" aria-label="RC5 project rates over time"></canvas></div>
+      </section>
+
+      <section class="chart-section" aria-labelledby="nodes-title">
+        <div class="chart-heading">
+          <div>
+            <h2 id="nodes-title">OGR, OGR-NG and OGR-P2</h2>
+            <p>Gnodes/sec</p>
+          </div>
+          <button type="button" data-reset="nodes">Reset zoom</button>
+        </div>
+        <div class="chart-wrap"><canvas id="nodes-chart" aria-label="OGR project rates over time"></canvas></div>
+      </section>
+
+      <footer>
+        <p>Rates are converted from the source logs' Mkeys/sec or Mnodes/sec to Gkeys/sec or Gnodes/sec. Source logs and parser are available in the <a href="https://github.com/dcti/rates-data">repository</a>.</p>
+      </footer>
+    </main>
+  </body>
+</html>
