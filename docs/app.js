@@ -24,7 +24,10 @@
   const toInput = document.querySelector("#to-date");
   const projectToggles = document.querySelector("#project-toggles");
   const showAllValues = document.querySelector("#show-all-values");
+  const showUnsmoothed = document.querySelector("#show-unsmoothed");
   const clippingPercentile = 0.99;
+  const smoothingWindow = 7 * 86400;
+  const smoothingRadius = smoothingWindow / 2;
 
   function dateInputValue(timestamp) {
     return new Date(timestamp * 1000).toISOString().slice(0, 10);
@@ -129,13 +132,57 @@
 
   async function pointsFor(project) {
     const years = project.years.filter(
-      (entry) => entry.last >= currentRange.start && entry.first <= currentRange.end,
+      (entry) =>
+        entry.last >= currentRange.start - smoothingRadius &&
+        entry.first <= currentRange.end + smoothingRadius,
     );
     const shards = await Promise.all(years.map((entry) => loadFile(entry.file)));
     return shards
       .flat()
-      .filter(([timestamp]) => timestamp >= currentRange.start && timestamp <= currentRange.end)
-      .map(([timestamp, rate]) => ({ x: timestamp * 1000, y: rate }));
+      .filter(
+        ([timestamp]) =>
+          timestamp >= currentRange.start - smoothingRadius &&
+          timestamp <= currentRange.end + smoothingRadius,
+      )
+      .map(([timestamp, rate]) => ({ x: timestamp, y: rate }));
+  }
+
+  async function chartPointsFor(project) {
+    const points = await pointsFor(project);
+    const chartPoints = showUnsmoothed.checked ? points : smoothPoints(points);
+    return chartPoints
+      .filter((point) => point.x >= currentRange.start && point.x <= currentRange.end)
+      .map((point) => ({ ...point, x: point.x * 1000 }));
+  }
+
+  function smoothPoints(points) {
+    const smoothed = [];
+    let left = 0;
+    let right = -1;
+    let sum = 0;
+    let count = 0;
+
+    for (const point of points) {
+      const start = point.x - smoothingRadius;
+      const end = point.x + smoothingRadius;
+      while (right + 1 < points.length && points[right + 1].x <= end) {
+        right += 1;
+        if (Number.isFinite(points[right].y)) {
+          sum += points[right].y;
+          count += 1;
+        }
+      }
+      while (left <= right && points[left].x < start) {
+        if (Number.isFinite(points[left].y)) {
+          sum -= points[left].y;
+          count -= 1;
+        }
+        left += 1;
+      }
+      smoothed.push({ x: point.x, y: count ? sum / count : null });
+    }
+
+    return smoothed;
   }
 
   function percentile(values, fraction) {
@@ -145,6 +192,9 @@
   }
 
   function prepareDatasets(datasets, unit, note) {
+    const smoothingNote = showUnsmoothed.checked
+      ? "Showing unsmoothed data."
+      : "Showing a centered 7-day moving average.";
     const values = datasets.flatMap((dataset) =>
       dataset.data.map((point) => point.y).filter(Number.isFinite),
     );
@@ -175,12 +225,14 @@
     if (cap !== undefined && max !== undefined && max > cap) {
       note.textContent = `Clipped above ${cap.toLocaleString(undefined, {
         maximumFractionDigits: 3,
-      })} ${unit} (99th percentile of selected projects and dates). Triangles mark clipped points; hover for actual values.`;
+      })} ${unit} (99th percentile of selected projects and dates). Triangles mark clipped points; hover for actual values. ${smoothingNote}`;
       return { datasets: chartDatasets, max: cap };
     }
-    note.textContent = showAllValues.checked
-      ? "Showing the full value range."
-      : "No values exceed the 99th percentile.";
+    note.textContent = `${smoothingNote} ${
+      showAllValues.checked
+        ? "Showing the full value range."
+        : "No values exceed the 99th percentile."
+    }`;
     return { datasets: chartDatasets };
   }
 
@@ -197,13 +249,13 @@
         Promise.all(keyProjects.map(async (project) => ({
           label: project.label,
           id: project.id,
-          data: await pointsFor(project),
+          data: await chartPointsFor(project),
           borderColor: colors[project.id],
         }))),
         Promise.all(nodeProjects.map(async (project) => ({
           label: project.label,
           id: project.id,
-          data: await pointsFor(project),
+          data: await chartPointsFor(project),
           borderColor: colors[project.id],
         }))),
       ]);
@@ -308,6 +360,7 @@
       applyRange(start, end);
     });
     showAllValues.addEventListener("change", refreshCharts);
+    showUnsmoothed.addEventListener("change", refreshCharts);
     document.querySelectorAll("[data-reset]").forEach((button) => {
       button.addEventListener("click", () => {
         const chart = chartInstances[button.dataset.reset];

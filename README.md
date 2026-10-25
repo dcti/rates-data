@@ -33,3 +33,5 @@ the repository's Pages build and deployment source to **GitHub Actions** to
 enable deployment. The charts clip values above the 99th percentile for the
 selected projects and date range by default; clipped points are marked and
 tooltips retain the original values. Use **Show all values** to disable clipping.
+The charts display a centered 7-day moving average by default; use **Show
+unsmoothed data** to view the original rates instead.
