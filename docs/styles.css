@@ -48,6 +48,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .date-range { gap: 12px; }
 .date-range label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .9rem; }
 input { padding: 6px 9px; }
+.scale-toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+.scale-toggle input { min-height: auto; accent-color: var(--accent); }
 fieldset { padding: 0; border: 0; }
 legend { margin-bottom: 10px; font-weight: 650; }
 .project-toggles label { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; }
@@ -59,6 +61,7 @@ legend { margin-bottom: 10px; font-weight: 650; }
 .chart-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .chart-heading h2 { margin: 0; font-size: 1.25rem; }
 .chart-heading p { margin: 5px 0 0; color: var(--muted); font-size: .9rem; }
+.chart-heading .scale-note { font-size: .8rem; }
 .chart-wrap { position: relative; height: min(52vw, 400px); min-height: 250px; margin-top: 14px; }
 footer { padding: 8px 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
 a { color: var(--accent); }

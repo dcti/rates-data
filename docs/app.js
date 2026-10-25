@@ -23,6 +23,8 @@
   const fromInput = document.querySelector("#from-date");
   const toInput = document.querySelector("#to-date");
   const projectToggles = document.querySelector("#project-toggles");
+  const showAllValues = document.querySelector("#show-all-values");
+  const clippingPercentile = 0.99;
 
   function dateInputValue(timestamp) {
     return new Date(timestamp * 1000).toISOString().slice(0, 10);
@@ -59,12 +61,13 @@
                   : "";
               },
               label(item) {
-                if (item.parsed.y == null) {
+                if (item.raw.actualY == null) {
                   return `${item.dataset.label}: no rate recorded`;
                 }
-                return `${item.dataset.label}: ${item.parsed.y.toLocaleString(undefined, {
+                const clippedNote = item.raw.clipped ? " (clipped in chart)" : "";
+                return `${item.dataset.label}: ${item.raw.actualY.toLocaleString(undefined, {
                   maximumFractionDigits: 3,
-                })} ${unit}`;
+                })} ${unit}${clippedNote}`;
               },
             },
           },
@@ -135,6 +138,52 @@
       .map(([timestamp, rate]) => ({ x: timestamp * 1000, y: rate }));
   }
 
+  function percentile(values, fraction) {
+    const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+    if (!sorted.length) return undefined;
+    return sorted[Math.ceil(fraction * sorted.length) - 1];
+  }
+
+  function prepareDatasets(datasets, unit, note) {
+    const values = datasets.flatMap((dataset) =>
+      dataset.data.map((point) => point.y).filter(Number.isFinite),
+    );
+    const cap = showAllValues.checked
+      ? undefined
+      : percentile(values.filter((value) => value > 0), clippingPercentile);
+    const max = values.length ? values.reduce((highest, value) => Math.max(highest, value)) : undefined;
+    const chartDatasets = datasets.map((dataset) => ({
+      ...dataset,
+      data: dataset.data.map((point) => {
+        const clipped = cap !== undefined && point.y !== null && point.y > cap;
+        return {
+          ...point,
+          actualY: point.y,
+          y: clipped ? cap : point.y,
+          clipped,
+        };
+      }),
+      borderWidth: 1.5,
+      pointRadius: (context) => (context.raw?.clipped ? 4 : 0),
+      pointHoverRadius: 5,
+      pointHitRadius: 5,
+      pointStyle: (context) => (context.raw?.clipped ? "triangle" : "circle"),
+      pointBackgroundColor: colors[dataset.id],
+      tension: 0,
+    }));
+
+    if (cap !== undefined && max !== undefined && max > cap) {
+      note.textContent = `Clipped above ${cap.toLocaleString(undefined, {
+        maximumFractionDigits: 3,
+      })} ${unit} (99th percentile of selected projects and dates). Triangles mark clipped points; hover for actual values.`;
+      return { datasets: chartDatasets, max: cap };
+    }
+    note.textContent = showAllValues.checked
+      ? "Showing the full value range."
+      : "No values exceed the 99th percentile.";
+    return { datasets: chartDatasets };
+  }
+
   async function refreshCharts() {
     const thisRefresh = ++refreshId;
     error.hidden = true;
@@ -147,28 +196,30 @@
       const [keyData, nodeData] = await Promise.all([
         Promise.all(keyProjects.map(async (project) => ({
           label: project.label,
+          id: project.id,
           data: await pointsFor(project),
           borderColor: colors[project.id],
         }))),
         Promise.all(nodeProjects.map(async (project) => ({
           label: project.label,
+          id: project.id,
           data: await pointsFor(project),
           borderColor: colors[project.id],
         }))),
       ]);
       if (thisRefresh !== refreshId) return;
 
-      for (const [chart, datasets] of [
-        [chartInstances.keys, keyData],
-        [chartInstances.nodes, nodeData],
+      for (const [chart, datasets, unit, note] of [
+        [chartInstances.keys, keyData, "Gkeys/sec", document.querySelector("#keys-scale-note")],
+        [chartInstances.nodes, nodeData, "Gnodes/sec", document.querySelector("#nodes-scale-note")],
       ]) {
-        chart.data.datasets = datasets.map((dataset) => ({
-          ...dataset,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          pointHitRadius: 5,
-          tension: 0,
-        }));
+        const prepared = prepareDatasets(datasets, unit, note);
+        chart.data.datasets = prepared.datasets;
+        if (prepared.max === undefined) {
+          delete chart.options.scales.y.max;
+        } else {
+          chart.options.scales.y.max = prepared.max;
+        }
         chart.options.scales.x.min = currentRange.start * 1000;
         chart.options.scales.x.max = currentRange.end * 1000;
         chart.options.plugins.zoom.limits.x.min = currentRange.start * 1000;
@@ -256,6 +307,7 @@
       const end = Date.parse(`${toInput.value}T23:59:59Z`) / 1000;
       applyRange(start, end);
     });
+    showAllValues.addEventListener("change", refreshCharts);
     document.querySelectorAll("[data-reset]").forEach((button) => {
       button.addEventListener("click", () => {
         const chart = chartInstances[button.dataset.reset];

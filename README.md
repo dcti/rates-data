@@ -30,4 +30,6 @@ The generated `docs/data/` directory can be previewed with any local static
 HTTP server. GitHub Actions regenerates the data and deploys the site when rate
 logs or site/parser files change on `master`, or when manually dispatched. Set
 the repository's Pages build and deployment source to **GitHub Actions** to
-enable deployment.
+enable deployment. The charts clip values above the 99th percentile for the
+selected projects and date range by default; clipped points are marked and
+tooltips retain the original values. Use **Show all values** to disable clipping.
